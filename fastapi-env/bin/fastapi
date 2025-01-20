@@ -1,4 +1,4 @@
-#!/home/fdessoy/projects/wolt/fastapi-env/bin/python3
+#!/home/fdessoy/projects/wolt_challenge/fastapi-env/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

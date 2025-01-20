@@ -1,48 +1,59 @@
 from fastapi import FastAPI
-from typing import Any, Dict
+from typing import Any, Dict, List
 from jsonpath_ng import parse
+from jsonpath_ng.exceptions import JsonPathParserError
 import requests
 
 app = FastAPI()
 
-#url_static_test = "https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/home-assignment-venue-helsinki/static"
-#url_dynamic_test = "https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/home-assignment-venue-helsinki/dynamic"
-
-# the URL will change between the /v1/ and /static/ || /dynamic
-# example1: https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/fafas/dynamic
-# example2: https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/mcdonalds/dynamic
-# example3: https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/habibs/static
-
-def parsing_info(unparsed_json: Dict[str, Any]) -> Dict[str, Any]:
-	return {}
+def safe_parse(path: str, data: Dict[str, Any]):
+	try:
+		return parse(path).find(data)[0].value
+	except (IndexError, JsonPathParserError):
+		return None
 
 
-def construct_url(venue_slug: str, endpoint_type: str, base_url: str) -> str:
-	if (endpoint_type == "static"):
-		url = f"{base_url}/{venue_slug}/{endpoint_type}"
-	elif (endpoint_type == "dynamic"):
-		url = f"{base_url}/{venue_slug}/{endpoint_type}"
-	if (endpoint_type or endpoint_type.strip().lower() not in {"static", "dynamic"}):
-		raise ValueError("Error: endpoint type not supported. SUPPORTED ENDPOINT TYPES: DYNAMIC && STATIC")
-	return (url)
+def parsing_info(data_static: Dict[str, Any], data_dynamic: Dict[str, Any]) -> Dict[str, Any]:
+	coordinates: List[float] = safe_parse("$.venue_raw.location.coordinates", data_static)
+	surcharge: int = safe_parse("$.venue_raw.delivery_specs.order_minimum_no_surcharge", data_dynamic)
+	base_price: int = safe_parse("$.venue_raw.delivery_specs.delivery_pricing.base_price", data_dynamic)
+	distance_ranges: List[Dict[str, Any]] = safe_parse("$.venue_raw.delivery_specs.delivery_pricing.distance_ranges", data_dynamic)
+	return {"coordinates": coordinates, 
+		 "small_order_surcharge": surcharge, 
+		 "base_price": base_price, 
+		 "distance_range": distance_ranges}
 
 @app.get("/api/v1/delivery-order-price")
 def read_json(venue_slug: str, cart_value: int, user_lat: float, user_lon: float):
-	base_url = "https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues"
-	url_static = construct_url(venue_slug, "static", base_url)
-	url_dynamic = construct_url(venue_slug, "dynamic", base_url)
+	endpoint_static = "https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/home-assignment-venue-helsinki/static"
+	endpoint_dynamic = "https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/home-assignment-venue-helsinki/dynamic"
 	try:
-		response = requests.get(url_static)
-		response.raise_for_status()
-	except requests.exceptions.RequestException:
-		try:
-			response = requests.get(url_dynamic)
-			response.raise_for_status()
-		except requests.exceptions.RequestException as e:
-			return {"Error": str(e), "message": "Both endpoints failed"}
-		## PARSE HERE
-		data = parsing_info(response)
-		## CALCULATE STUFF HERE
+		response_static = requests.get(endpoint_static)
+		response_static.raise_for_status()
+	except requests.exceptions.RequestException as e:
+		return {"Error": str(e), "message": "static endpoint failed"}
+	try:
+		response_dynamic = requests.get(endpoint_dynamic)
+		response_dynamic.raise_for_status()
+	except requests.exceptions.RequestException as e:
+		return {"Error": str(e), "message": "both endpoints failed"}
+	data_static: Dict[str, Any] = response_static.json()
+	data_dynamic: Dict[str, Any] = response_dynamic.json()
+	## PARSE HERE
+	parsed_data: Dict[str, Any] = parsing_info(data_static, data_dynamic)
+	print(parsed_data)
+	## CALCULATE STUFF HERE
+	
+	return parsed_data
+	
 
-		answer = data.json()
-		return {"source": "dynamic", "data": answer}
+#must return:
+# {
+#   "total_price": 1190,
+#   "small_order_surcharge": 0,
+#   "cart_value": 1000,
+#   "delivery": {
+#     "fee": 190,
+#     "distance": 177
+#   }
+# } #(made up values)
