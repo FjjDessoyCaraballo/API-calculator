@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from typing import Any, Dict, List
 from jsonpath_ng import parse
 from jsonpath_ng.exceptions import JsonPathParserError
+from pydantic import BaseModel
 import requests
 
 app = FastAPI()
@@ -51,8 +52,14 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     # Distance in kilometers!
     distance = R * c
 	# Return in meters
-    return distance * 1000 
+    return distance * 1000
 
+# Custom exception
+def not_deliverable(max_dist: int):
+	if (max_dist == 0):
+		raise TooFarAway("user is not deliverable distance")
+
+# DOPC main logic
 @app.get("/api/v1/delivery-order-price")
 def dopc(venue_slug: str, cart_value: int, user_lat: float, user_lon: float):
 	endpoint_static = "https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/home-assignment-venue-helsinki/static"
@@ -78,46 +85,38 @@ def dopc(venue_slug: str, cart_value: int, user_lat: float, user_lon: float):
 
 	# Calculate the order sum
 	## Checking distance for amount of fee
-	venue_lat, venue_lon = parsed_data["coordinates"]
-	base_price = parsed_data["base_price"]
-	surcharge = parsed_data["small_order_surcharge"]
-	# distance: float = haversine(user_lat, user_lon, venue_lat, venue_lon)
-	distance = 600
-	print(distance)
+	venue_lon, venue_lat = parsed_data["coordinates"]
+	base_price: int = parsed_data["base_price"]
+	surcharge: int = parsed_data["small_order_surcharge"]
+	distance: float = haversine(user_lat, user_lon, venue_lat, venue_lon)
 
 	## Go through the list of distance ranges
-	fee = 0
+	fee: int = 0
+	deliverable = False
 	for range_item in parsed_data["distance_range"]:
 		min_dist = range_item["min"]
 		max_dist = range_item["max"]
-		if max_dist == 0:
-			print("oh no")
-			#raise TooFarAway("Area not covered by service (too far away)")
-		elif min_dist <= distance < max_dist:
-			fee = base_price + range_item["a"] + range_item["b"] * distance / 10
+		if min_dist <= distance < max_dist or max_dist == 0:
+			fee = base_price + range_item["a"] + round(range_item["b"] * distance / 10)
+			deliverable = True
+			break
 
+	if not deliverable:
+		raise TooFarAway("Area not covered by service.")
 	# Calculate total price
-
+	# fee = math.floor(fee)
 	if cart_value < surcharge: ## surcharge for minimum order price applied
 		total_price = cart_value + surcharge + fee
 	else: ## surcharge not applied
 		total_price = cart_value + fee
-	# print(total_price)
+		surcharge = 0
+
+	# Rounding up values
+	distance = round(distance)
 
 	return {"total_price": total_price,
 		 "small_order_surcharge": surcharge, 
 		 "cart_value": cart_value, 
 		 "delivery": {"fee": fee, 
 				"distance": distance}}
-	
 
-#must return:
-# {
-#   "total_price": 1190,
-#   "small_order_surcharge": 0,
-#   "cart_value": 1000,
-#   "delivery": {
-#     "fee": 190,
-#     "distance": 177
-#   }
-# } #(made up values)
