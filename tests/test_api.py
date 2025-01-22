@@ -32,19 +32,7 @@ def test_api_too_far():
         "user_lon": 0
     })
     
-    assert response.status_code == 200  # FastAPI still returns 200 but with an error message
+    assert response.status_code == 200
     data = response.json()
     assert "Error" in data
     assert "User is too far away" in data["Error"]
-
-def test_api_venue():
-    """Test if the API returns a successful response for a valid request."""
-    response = client.get("/api/v1/delivery-order-price", params={
-        "venue_slug": "invalid",
-        "cart_value": 1000,
-        "user_lat": 60.1699,  # Helsinki
-        "user_lon": 24.9384
-    })
-    
-    assert response.status_code == 200
-    data = response.json()

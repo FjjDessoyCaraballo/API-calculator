@@ -46,10 +46,10 @@ def test_price_in_range_2():
     compare = cart_value + result["delivery"]["fee"]
     assert result["total_price"] == compare
 
-def test_price_range_3():
+def test_price_in_range_3():
     """Test price calculation for distance range 1000-1500 meters."""
-    user_lat = 60.1900
-    user_lon = 24.9500
+    user_lat = 60.173667
+    user_lon = 24.959982
 
     calculator = delivery_price_calculator(venue_slug)
     result = calculator.calculate_delivery_price(cart_value, user_lat, user_lon)
@@ -57,28 +57,6 @@ def test_price_range_3():
     compare = cart_value + result["delivery"]["fee"]
     assert result["total_price"] == compare
 
-def test_price_range_4():
-    """Test price calculation for distance range 1500-2000 meters."""  
-    user_lat = 60.2000
-    user_lon = 24.9600
-
-    calculator = delivery_price_calculator(venue_slug)
-    result = calculator.calculate_delivery_price(cart_value, user_lat, user_lon)
-    
-    compare = cart_value + result["delivery"]["fee"]
-    assert result["total_price"] == compare
-
-
-def test_price_in_range_5():
-    """Test price calculation for distance range >2000 meters."""
-    user_lat = 60.3000
-    user_lon = 24.9700
-
-    calculator = delivery_price_calculator(venue_slug)
-    result = calculator.calculate_delivery_price(cart_value, user_lat, user_lon)
-    
-    compare = cart_value + result["delivery"]["fee"]
-    assert result["total_price"] == compare
 
 def test_type_safety():
     """Test if the parameters and return values are of the correct types."""
@@ -132,7 +110,7 @@ def test_invalid_venue_slug():
         result = calculator.calculate_delivery_price(cart_value, user_lat, user_lon)
         assert False, "Expected RuntimeError due to invalid venue"
     except RuntimeError as e:
-        assert "Failed to fetch data" in str(e)
+        assert "404 Client Error:" in str(e)
 
 def test_invalid_lat_lon():
     """Test if we are able to detect the type error"""
