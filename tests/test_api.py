@@ -3,6 +3,11 @@ from dopc import app
 
 client = TestClient(app)
 
+""" WHY IT PASSES THE TESTS EVEN WITH FAULTY PARAMETERS?
+Even though it is an error, the test passes because it show that
+we are handling it. If the tester would fail, it means that our error handling
+is incorrect """
+
 def test_api_success():
     """Test if the API returns a successful response for a valid request."""
     response = client.get("/api/v1/delivery-order-price", params={
@@ -31,11 +36,6 @@ def test_api_too_far():
     data = response.json()
     assert "Error" in data
     assert "User is too far away" in data["Error"]
-    
-    """ WHY IT PASSES THE TESTS EVEN WITH FAULTY PARAMETERS?
-    Even though it is an error, the test passes because it show that
-    we are handling it. If the tester would fail, it means that our error handling
-    is incorrect """
 
 def test_api_venue():
     """Test if the API returns a successful response for a valid request."""
