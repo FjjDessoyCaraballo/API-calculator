@@ -31,17 +31,20 @@ A quick breakdown of what this line is doing:
 
 For future use, I have devised a class `delivery_price_calculator` that can be instantiated in different end points whenever the need arises. To use the DOPC you only needs to go to a web browser (after setting up all the necessary dependencies in a python virtual environment), and type:
 
-```markdown
+```html
 http://localhost:8000/api/v1/delivery-order-price?venue_slug=<your_venue>&cart_value=<value_of_cart>&user_lat=<user_lat_coord>&user_lon=<user_lon_coord>
 ```
 
 It is a lot of information, but we can break it down into five parts (arrows are unnecessary when entering actual keys/values):
 
-1. **The base address**: `http://localhost:8000/api/v1/delivery-order-price`
-2. **Venue slug (parameter -> string)**: `venue_slug=<your_venue>`
-3. **Cart value (parameter -> integer)**: `cart_value=<value_of_cart>`
-4. **User latitude (parameter -> float)**: `user_lat=<user_lat_coord>`
-5. **User longitude (parameter -> float)**: `user_lon=<user_lon_coord>`
+| Parameter                       | Type     | Description                       | Example                            |
+|---------------------------------|----------|-----------------------------------|------------------------------------|
+| Base Address                    | URL      | Endpoint for delivery order price | [Base Address](http://localhost:8000/api/v1/delivery-order-price) |
+| Venue slug (`venue_slug`)       | string   | Unique identifier for the venue   | `venue_slug=<your_venue>`          |
+| Cart value (`cart_value`)       | integer  | Value of the cart                 | `cart_value=<value_of_cart>`       |
+| User latitude (`user_lat`)      | float    | Latitude coordinate of the user   | `user_lat=<user_lat_coord>`        |
+| User longitude (`user_lon`)     | float    | Longitude coordinate of the user  | `user_lon=<user_lon_coord>`        |
+
 
 > After the base URL you should input `?` before adding the parameters, and add `&` between every parameter
 
@@ -49,10 +52,13 @@ If you wishes to go about and try different parameters for testing, I recommend 
 
 ## Libraries that require installation
 
-- [requests](https://realpython.com/python-requests/)
-- [fastapi](https://fastapi.tiangolo.com/tutorial/)
-- [jsonpath_ng](https://pypi.org/project/jsonpath-ng/) for parse and JsonPathParserError
-- [jsonpath_ng.exceptions](https://pypi.org/project/jsonpath-ng/) for JsonPathParserError
+| Library                          | Purpose                                      | Link                                                 |
+|----------------------------------|----------------------------------------------|------------------------------------------------------|
+| requests                         | Fetching data from URL                       | [requests](https://realpython.com/python-requests/)  |
+| fastapi                          | Communication with endpoint                  | [fastapi](https://fastapi.tiangolo.com/tutorial/)    |
+| jsonpath_ng                      | Parse and JsonPathParserError                | [jsonpath_ng](https://pypi.org/project/jsonpath-ng/)  |
+| jsonpath_ng.exceptions           | JsonPathParserError                          | [jsonpath_ng.exceptions](https://pypi.org/project/jsonpath-ng/) |
+
 
 Other libraries used are already native to python3.12.
 
@@ -95,6 +101,14 @@ The `delivery_price_calculator` class calculates the delivery fee based on a ven
 │   │   ├── Compute Haversine formula
 │   │   └── return distance in meters
 │   │
+│   ├── _type_check(self, variable: Any, type_of_variable)
+│   │   ├── Type checking variables incoming from instantiation
+│   │   └── return True if no errors are raised
+│   │
+│   ├── _coordinate_check(self, coordinate, flag)
+│   │   ├── Check if coordinates are within bounds
+│   │   └── return True if no errors are raised
+│   │
 │   ├── calculate_delivery_price(self, cart_value, user_lat, user_lon)
 │       ├── venue_lon, venue_lat ← parsed_data["coordinates"]
 │       ├── distance ← _haversine(user_lat, user_lon, venue_lat, venue_lon)
@@ -131,3 +145,13 @@ test_delivery.py ..........                                                     
 
 =========================================== 12 passed in 7.99s ============================================
 ```
+
+## Possible future enhancements
+
+1. Use of `pydantic` for more robust type checking;
+   1. Changing from `jsonpath_ng` to `pydantic` might be a big overhaul. One needs to be certain of the tradeoff between robust type-checking and structure change of the incoming json;
+   2. with `pydantic` the need for extra testing increases;
+2. Further parsing and type-checking of the data from the static and dynamic URLs. For this assignment it was assumed that the information will be always correct, but it might be good practice to always sanitize all incoming data;
+3. Use kilometers instead of meters. The distances in kilometers are more visually friendly for whoever is analyzing the data.
+4. Include different surcharges escalating with `price_ranges`. Additional one euro does not seem enough when transporting an item that is being surcharged. Escalate the surcharge together with the distance.
+5. Further encapsulate parts of calculate_delivery_price;
