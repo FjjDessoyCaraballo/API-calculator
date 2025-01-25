@@ -54,8 +54,21 @@ class delivery_price_calculator:
 		c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 		return round(R * c * 1000)
 
+	def _type_check(self, venue_slug: str, cart_value: int, user_lat: float, user_lon: float):
+		if not isinstance(venue_slug, str):
+			raise TypeError(f"venue_slug should be str, got {type(venue_slug).__name__}")
+		if not isinstance(cart_value, int):
+			raise TypeError(f"cart_value should be int, got {type(cart_value).__name__}")
+		if not isinstance(user_lat, float):
+			raise TypeError(f"user_lat should be float, got {type(user_lat).__name__}")
+		if not isinstance(user_lon, float):
+			raise TypeError(f"user_lon should be float, got {type(user_lon).__name__}")
+		return 0
 
-	def calculate_delivery_price(self, cart_value: int, user_lat: float, user_lon: float) -> Dict[str, Any]:
+	def calculate_delivery_price(self, venue_slug: str, cart_value: int, user_lat: float, user_lon: float) -> Dict[str, Any]:
+		error_type = self._type_check(venue_slug, cart_value, user_lat, user_lon)
+		if error_type != 0:
+			return {"Error": error_type}
 		venue_lon, venue_lat = self.parsed_data["coordinates"]
 		base_price = self.parsed_data["base_price"]
 		surcharge = self.parsed_data["small_order_surcharge"]
