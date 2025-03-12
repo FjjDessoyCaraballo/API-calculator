@@ -1,4 +1,4 @@
-# Delivery Order Price Calculator service (DOPC)
+# API calculator
 
 ## How to use
 
