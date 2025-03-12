@@ -1,5 +1,7 @@
 # API calculator
 
+This is a middleware that uses an API call from a mock server to calculate delivery prices.
+
 ## How to use
 
 First you must create a virtual environment:
