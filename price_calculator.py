@@ -11,9 +11,9 @@ class too_far_away(Exception):
 class delivery_price_calculator:
      
 	def __init__(self, venue_slug: str):
-		self.static_url = f"https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/{venue_slug}/static"
+		self.static_url = f"https://mock-venue-website.com/{venue_slug}/static"
 		self.data_static = self.__fetch_data(self.static_url)
-		self.dynamic_url = f"https://consumer-api.development.dev.woltapi.com/home-assignment-api/v1/venues/{venue_slug}/dynamic"
+		self.dynamic_url = f"https://mock-venue-website.com/{venue_slug}/dynamic"
 		self.data_dynamic = self.__fetch_data(self.dynamic_url)
 		self.parsed_data = self.__parse_data()
           
